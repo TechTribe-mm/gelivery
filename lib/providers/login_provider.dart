@@ -18,7 +18,7 @@ class LoginProvider with ChangeNotifier {
 
     // final url = Uri.parse('https://dev.gigagates.com/qq-delivery-backend/v3/user/login');
     final url = Uri.parse('$uri$loginUrl');
-    print('url $url & $payLoadObj');
+    debugPrint('url $url & $payLoadObj');
     try {
       final response = await http.post(url,
           headers: {
@@ -26,13 +26,13 @@ class LoginProvider with ChangeNotifier {
             'access-control-allow-origin': '*'
           },
           body: payLoadObj);
-      print("response ${response.body} ${response.headers}");
+      debugPrint("response ${response.body} ${response.headers}");
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         LoginResponse loginResponse = LoginResponse.fromJson(responseData);
 
         if (loginResponse.success) {
-          print('Access Token: ${loginResponse.data?.accessToken}');
+          debugPrint('Access Token: ${loginResponse.data?.accessToken}');
 
           // Save tokens to SharedPreferences
           SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -40,20 +40,20 @@ class LoginProvider with ChangeNotifier {
           await prefs.setString(
               'refreshToken', loginResponse.data!.refreshToken);
           await prefs.setInt('expiresIn', loginResponse.data!.expiresIn);
-          print('Refresh Token: ${loginResponse.data?.refreshToken}');
-          print('Expire In: ${loginResponse.data?.expiresIn}');
-          print("Tokens saved in SharedPreferences");
+          debugPrint('Refresh Token: ${loginResponse.data?.refreshToken}');
+          debugPrint('Expire In: ${loginResponse.data?.expiresIn}');
+          debugPrint("Tokens saved in SharedPreferences");
           return loginResponse.message;
         } else {
-          print('Login failed: ${loginResponse.message}');
+          debugPrint('Login failed: ${loginResponse.message}');
           return loginResponse.message;
         }
       } else {
-        print('Server error: ${response.statusCode}');
+        debugPrint('Server error: ${response.statusCode}');
         return response.statusCode.toString();
       }
     } catch (error) {
-      print('Error during login: $error');
+      debugPrint('Error during login: $error');
       return error.toString();
     } finally {
       _isLoading = false;
@@ -61,42 +61,41 @@ class LoginProvider with ChangeNotifier {
     }
   }
 
-  Future<void> revokeToken() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? accessToken = prefs.getString('access_token');
-    String? refreshToken = prefs.getString('refresh_token');
+  // Future<void> revokeToken() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   String? accessToken = prefs.getString('access_token');
+  //   String? refreshToken = prefs.getString('refresh_token');
 
-    if (accessToken == null || refreshToken == null) {
-      debugPrint('No tokens to revoke');
-      return;
-    }
+  //   if (accessToken == null || refreshToken == null) {
+  //    debugPrint('No tokens to revoke');
+  //     return;
+  //   }
 
-    final url = Uri.parse(
-        'https://yourapi.com/v3/user/revoke'); // Replace with actual revoke URL
+  //   final url = Uri.parse('$uri$revokeUrl');
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode({
-          'token': accessToken,
-          'refresh_token': refreshToken,
-        }),
-      );
+  //   try {
+  //     final response = await http.post(
+  //       url,
+  //       headers: {
+  //         'Authorization': 'Bearer $accessToken',
+  //         'Content-Type': 'application/json'
+  //       },
+  //       body: jsonEncode({
+  //         'token': accessToken,
+  //         'refresh_token': refreshToken,
+  //       }),
+  //     );
 
-      if (response.statusCode == 200) {
-        debugPrint('Token revoked successfully');
-        await prefs.clear();
-      } else {
-        debugPrint('Failed to revoke token: ${response.statusCode}');
-      }
-    } catch (error) {
-      debugPrint('Error during token revocation: $error');
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //      debugPrint('Token revoked successfully');
+  //       await prefs.clear();
+  //     } else {
+  //      debugPrint('Failed to revoke token: ${response.statusCode}');
+  //     }
+  //   } catch (error) {
+  //    debugPrint('Error during token revocation: $error');
+  //   }
+  // }
 
   Future<bool> isTokenExpired() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -110,38 +109,46 @@ class LoginProvider with ChangeNotifier {
 
   Future<void> refreshToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? refreshToken = prefs.getString('refresh_token');
+    String? refreshToken = prefs.getString('accessToken');
 
-    if (refreshToken == null) {
-      debugPrint('No refresh token available');
-      return;
-    }
-
-    final url = Uri.parse(
-        'https://yourapi.com/v3/user/refresh'); // Replace with actual refresh URL
-
+    final url = Uri.parse('$uri$refreshToken');
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'refresh_token': refreshToken,
+          'accessToken': refreshToken,
         }),
       );
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        await prefs.setString('access_token', responseData['access_token']);
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        LoginResponse loginResponse = LoginResponse.fromJson(responseData);
+        if (loginResponse.success) {
+          debugPrint('Access Token: ${loginResponse.data?.accessToken}');
 
-        await prefs.setInt(
-          'expires_in',
-          (DateTime.now().millisecondsSinceEpoch ~/ 1000) +
-              (responseData['expires_in'] as int),
-        );
-        debugPrint('Token refreshed successfully');
+          // Save tokens to SharedPreferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('accessToken', loginResponse.data!.accessToken);
+          await prefs.setString(
+              'refreshToken', loginResponse.data!.refreshToken);
+          await prefs.setInt('expiresIn', loginResponse.data!.expiresIn);
+          debugPrint('Refresh Token: ${loginResponse.data?.refreshToken}');
+          debugPrint('Expire In: ${loginResponse.data?.expiresIn}');
+
+          // await prefs.setInt(
+          //   'expires_in',
+          //   (DateTime.now().millisecondsSinceEpoch ~/ 1000) +
+          //       (responseData['expires_in'] as int),
+          // );
+          debugPrint("Tokens saved in SharedPreferences");
+          debugPrint('Token refreshed successfully');
+        } else {
+          debugPrint('Failed to refresh token: ${response.statusCode}');
+        }
       } else {
-        debugPrint('Failed to refresh token: ${response.statusCode}');
-        await revokeToken();
+        debugPrint('Server error: ${response.statusCode}');
+        debugPrint(response.statusCode.toString());
       }
     } catch (error) {
       debugPrint('Error during token refresh: $error');

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gelivery/pages/login.dart';
-import 'package:gelivery/pages/pickup_list.dart';
 import 'package:gelivery/pages/widgets/pickup_tab_widget.dart';
-// import 'package:gelivery/pages/tracking_lists.dart';
 import 'package:gelivery/providers/login_provider.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +23,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       initialRoute: '/login',
+      theme: ThemeData(useMaterial3: false),
+
       debugShowCheckedModeBanner: false,
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()),
